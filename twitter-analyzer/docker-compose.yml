@@ -1,0 +1,38 @@
+
+# docker-compose.yml
+version: '3.8'
+
+services:
+  twitter-persona-api:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env  # Load environment variables from .env file
+    environment:
+      # Override or set additional environment variables here
+      # Local AI Configuration (for Ollama or similar)
+      - USE_LOCAL_AI=${USE_LOCAL_AI:-false}
+      - LOCAL_AI_URL=${LOCAL_AI_URL:-http://localhost:11434}
+      - AI_MODEL=${AI_MODEL:-gpt-3.5-turbo}
+    volumes:
+      - ./uploads:/app/uploads
+      - ./static:/app/static
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Optional: Include Ollama for local AI
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollama_data:/root/.ollama
+  #   restart: unless-stopped
+
+# volumes:
+#   ollama_data:

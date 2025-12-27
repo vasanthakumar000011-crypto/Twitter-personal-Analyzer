@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitter Persona Analyzer & Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'twitter': '#1DA1F2',
+                        'dark-bg': '#0f172a',
+                        'dark-card': '#1e293b',
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 dark:bg-dark-bg min-h-screen">
+    <!-- Header -->
+    <header class="bg-white dark:bg-dark-card shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-6">
+                <div class="flex items-center">
+                    <i class="fab fa-twitter text-twitter text-3xl mr-3"></i>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Twitter Persona Analyzer</h1>
+                        <p class="text-gray-600 dark:text-gray-300">AI-Powered Tweet Generation</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div id="healthStatus" class="flex items-center space-x-2">
+                        <div class="w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></div>
+                        <span class="text-sm text-gray-600 dark:text-gray-300">Checking...</span>
+                    </div>
+                    <button onclick="toggleDarkMode()" class="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600">
+                        <i class="fas fa-moon dark:hidden"></i>
+                        <i class="fas fa-sun hidden dark:inline"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Stats Cards -->
+        <div id="statsCards" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <!-- Stats will be loaded here -->
+        </div>
+
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Left Column -->
+            <div class="space-y-8">
+                <!-- Upload Section -->
+                <div class="bg-white dark:bg-dark-card rounded-xl shadow-lg p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <i class="fas fa-upload text-twitter mr-2"></i>
+                        Upload Twitter Data
+                    </h2>
+                    <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6">
+                        <div class="text-center">
+                            <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                            <input type="file" id="csvFile" accept=".csv" class="hidden" onchange="handleFileSelect(event)">
+                            <label for="csvFile" class="cursor-pointer bg-twitter text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors inline-flex items-center">
+                                <i class="fas fa-file-csv mr-2"></i>
+                                Choose CSV File
+                            </label>
+                            <p class="text-gray-600 dark:text-gray-400 mt-2 text-sm">
+                                Required columns: content, user, likes, retweets, replies
+                            </p>
+                        </div>
+                        <div id="fileInfo" class="hidden mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                            <div class="flex items-center text-blue-700 dark:text-blue-300">
+                                <i class="fas fa-info-circle mr-2"></i>
+                                <span id="fileName"></span>
+                            </div>
+                        </div>
+                        <div id="uploadProgress" class="hidden mt-4">
+                            <div class="bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                <div class="bg-twitter rounded-full h-2 transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">Uploading and analyzing...</p>
+                        </div>
+                    </div>
+                    <button id="uploadBtn" onclick="uploadFile()" disabled class="w-full mt-4 bg-gray-400 text-white py-3 rounded-lg transition-colors">
+                        <i class="fas fa-upload mr-2"></i>
+                        Upload & Analyze
+                    </button>
+                </div>
+
+                <!-- Tweet Generation -->
+                <div class="bg-white dark:bg-dark-card rounded-xl shadow-lg p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <i class="fas fa-magic text-purple-500 mr-2"></i>
+                        Generate Tweets
+                    </h2>
+                    <form onsubmit="generateTweets(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Context</label>
+                            <textarea id="context" placeholder="What do you want to tweet about? (e.g., 'I just launched a new feature for my SaaS app')" 
+                                class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-twitter focus:border-twitter" 
+                                rows="3" required></textarea>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Count</label>
+                                <select id="count" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-twitter focus:border-twitter">
+                                    <option value="1">1 Tweet</option>
+                                    <option value="3" selected>3 Tweets</option>
+                                    <option value="5">5 Tweets</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tone</label>
+                                <select id="tone" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-twitter focus:border-twitter">
+                                    <option value="auto">Auto</option>
+                                    <option value="excited">Excited</option>
+                                    <option value="professional">Professional</option>
+                                    <option value="casual">Casual</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" id="generateBtn" disabled class="w-full bg-gray-400 text-white py-3 rounded-lg transition-colors">
+                            <i class="fas fa-magic mr-2"></i>
+                            Generate Tweets
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="space-y-8">
+                <!-- Persona Analysis -->
+                <div class="bg-white dark:bg-dark-card rounded-xl shadow-lg p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <i class="fas fa-user-cog text-green-500 mr-2"></i>
+                        Persona Analysis
+                    </h2>
+                    <div id="personaAnalysis" class="text-center text-gray-500 dark:text-gray-400">
+                        <i class="fas fa-chart-line text-4xl mb-4"></i>
+                        <p>Upload CSV data to see persona analysis</p>
+                    </div>
+                </div>
+
+                <!-- Generated Tweets -->
+                <div class="bg-white dark:bg-dark-card rounded-xl shadow-lg p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <i class="fas fa-comments text-blue-500 mr-2"></i>
+                        Generated Tweets
+                    </h2>
+                    <div id="generatedTweets" class="space-y-4">
+                        <div class="text-center text-gray-500 dark:text-gray-400">
+                            <i class="fab fa-twitter text-4xl mb-4"></i>
+                            <p>Generate tweets to see them here</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tweets History -->
+        <div class="mt-8 bg-white dark:bg-dark-card rounded-xl shadow-lg p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
+                    <i class="fas fa-history text-indigo-500 mr-2"></i>
+                    Tweets History
+                </h2>
+                <button onclick="loadTweetsHistory()" class="bg-indigo-500 text-white px-4 py-2 rounded-lg hover:bg-indigo-600 transition-colors">
+                    <i class="fas fa-refresh mr-2"></i>
+                    Refresh
+                </button>
+            </div>
+            <div id="tweetsHistory" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="col-span-full text-center text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-history text-4xl mb-4"></i>
+                    <p>No tweets history available</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast Notifications -->
+    <div id="toast" class="fixed top-4 right-4 z-50 hidden">
+        <div class="bg-white dark:bg-dark-card border-l-4 rounded-lg shadow-lg p-4 max-w-md">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i id="toastIcon" class="text-2xl"></i>
+                </div>
+                <div class="ml-3">
+                    <p id="toastMessage" class="text-sm font-medium text-gray-900 dark:text-white"></p>
+                </div>
+                <div class="ml-auto pl-3">
+                    <button onclick="hideToast()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden flex items-center justify-center">
+        <div class="bg-white dark:bg-dark-card rounded-lg p-6 text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-twitter mx-auto mb-4"></div>
+            <p class="text-gray-900 dark:text-white">Processing...</p>
+        </div>
+    </div>
+
+    <script>
+        // API Base URL
+        const API_BASE = window.location.origin;
+        let selectedFile = null;
+        let personaAvailable = false;
+
+        // Dark mode toggle
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('darkMode', document.documentElement.classList.contains('dark'));
+        }
+
+        // Initialize dark mode
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.documentElement.classList.add('dark');
+        }
+
+        // Toast notifications
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toastIcon');
+            const messageEl = document.getElementById('toastMessage');
+            
+            const icons = {
+                success: 'fas fa-check-circle text-green-500',
+                error: 'fas fa-exclamation-circle text-red-500',
+                warning: 'fas fa-exclamation-triangle text-yellow-500',
+                info: 'fas fa-info-circle text-blue-500'
+            };
+            
+            const borderColors = {
+                success: 'border-green-500',
+                error: 'border-red-500',
+                warning: 'border-yellow-500',
+                info: 'border-blue-500'
+            };
+            
+            icon.className = icons[type];
+            messageEl.textContent = message;
+            toast.querySelector('div').className = `bg-white dark:bg-dark-card ${borderColors[type]} border-l-4 rounded-lg shadow-lg p-4 max-w-md`;
+            
+            toast.classList.remove('hidden');
+            setTimeout(() => hideToast(), 5000);
+        }
+
+        function hideToast() {
+            document.getElementById('toast').classList.add('hidden');
+        }
+
+        function showLoading() {
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.add('hidden');
+        }
+
+        // API calls
+        async function apiCall(endpoint, options = {}) {
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.detail || `HTTP ${response.status}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('API call failed:', error);
+                throw error;
+            }
+        }
+
+        // Health check
+        async function checkHealth() {
+            try {
+                const health = await apiCall('/health');
+                const statusEl = document.getElementById('healthStatus');
+                statusEl.innerHTML = `
+                    <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <span class="text-sm text-green-600 dark:text-green-400">Online (${health.ai_backend})</span>
+                `;
+            } catch (error) {
+                const statusEl = document.getElementById('healthStatus');
+                statusEl.innerHTML = `
+                    <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                    <span class="text-sm text-red-600 dark:text-red-400">Offline</span>
+                `;
+            }
+        }
+
+        // Load database stats
+        async function loadStats() {
+            try {
+                const stats = await apiCall('/database-stats');
+                console.log(stats)
+                const statsCards = document.getElementById('statsCards');
+                
+                statsCards.innerHTML = `
+                    <div class="bg-white dark:bg-dark-card rounded-lg p-6 shadow">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-database text-blue-500 text-2xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Tweets</p>
+                                <p class="text-2xl font-semibold text-gray-900 dark:text-white">${stats.total_tweets.toLocaleString() || 0}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-dark-card rounded-lg p-6 shadow">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-user text-green-500 text-2xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Personas</p>
+                                <p class="text-2xl font-semibold text-gray-900 dark:text-white">${stats.total_personas || 0}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-dark-card rounded-lg p-6 shadow">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-magic text-purple-500 text-2xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Generated</p>
+                                <p class="text-2xl font-semibold text-gray-900 dark:text-white">${stats.total_generated_tweets || 0}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-dark-card rounded-lg p-6 shadow">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-chart-line text-orange-500 text-2xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Datasets</p>
+                                <p class="text-2xl font-semibold text-gray-900 dark:text-white">${stats.datasets.length || 0}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Failed to load stats:', error);
+            }
+        }
+
+        // File handling
+        function handleFileSelect(event) {
+            selectedFile = event.target.files[0];
+            const fileInfo = document.getElementById('fileInfo');
+            const fileName = document.getElementById('fileName');
+            const uploadBtn = document.getElementById('uploadBtn');
+            
+            if (selectedFile) {
+                fileName.textContent = `${selectedFile.name} (${(selectedFile.size / 1024 / 1024).toFixed(2)} MB)`;
+                fileInfo.classList.remove('hidden');
+                uploadBtn.disabled = false;
+                uploadBtn.className = 'w-full mt-4 bg-twitter text-white py-3 rounded-lg hover:bg-blue-600 transition-colors';
+            } else {
+                fileInfo.classList.add('hidden');
+                uploadBtn.disabled = true;
+                uploadBtn.className = 'w-full mt-4 bg-gray-400 text-white py-3 rounded-lg transition-colors';
+            }
+        }
+
+        // Upload file
+        async function uploadFile() {
+            if (!selectedFile) return;
+            
+            const uploadProgress = document.getElementById('uploadProgress');
+            const progressBar = uploadProgress.querySelector('div div');
+            
+            try {
+                showLoading();
+                uploadProgress.classList.remove('hidden');
+                
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+                
+                // Simulate progress
+                let progress = 0;
+                const progressInterval = setInterval(() => {
+                    progress += Math.random() * 30;
+                    if (progress > 90) progress = 90;
+                    progressBar.style.width = `${progress}%`;
+                }, 500);
+                
+                const response = await fetch(`${API_BASE}/upload-csv`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                clearInterval(progressInterval);
+                progressBar.style.width = '100%';
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.detail || `Upload failed: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                showToast(`Successfully processed ${result.total_tweets} tweets!`, 'success');
+                personaAvailable = true;
+                document.getElementById('generateBtn').disabled = false;
+                document.getElementById('generateBtn').className = 'w-full bg-purple-500 text-white py-3 rounded-lg hover:bg-purple-600 transition-colors';
+                
+                // Reset upload UI
+                selectedFile = null;
+                document.getElementById('csvFile').value = '';
+                document.getElementById('fileInfo').classList.add('hidden');
+                document.getElementById('uploadBtn').disabled = true;
+                document.getElementById('uploadBtn').className = 'w-full mt-4 bg-gray-400 text-white py-3 rounded-lg transition-colors';
+                uploadProgress.classList.add('hidden');
+                
+                // Load analysis and update stats
+                await loadPersonaAnalysis();
+                await loadStats();
+                
+            } catch (error) {
+                showToast(`Upload failed: ${error.message}`, 'error');
+                uploadProgress.classList.add('hidden');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Load persona analysis
+        async function loadPersonaAnalysis() {
+            try {
+                const analysis = await apiCall('/persona-analysis');
+                const analysisEl = document.getElementById('personaAnalysis');
+                
+                const patterns = analysis.writing_patterns;
+                
+                analysisEl.innerHTML = `
+                    <div class="space-y-4">
+                        <div class="text-left">
+                            <h3 class="font-semibold text-gray-900 dark:text-white mb-2">Writing Patterns</h3>
+                            <div class="grid grid-cols-2 gap-4 text-sm">
+                                <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                                    <p class="font-medium">Avg Length</p>
+                                    <p class="text-lg">${patterns.avg_length} chars</p>
+                                </div>
+                                <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                                    <p class="font-medium">Emoji Usage</p>
+                                    <p class="text-lg">${(patterns.emoji_usage.usage_rate * 100).toFixed(1)}%</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-left">
+                            <h4 class="font-medium text-gray-900 dark:text-white mb-2">Common Starters</h4>
+                            <div class="flex flex-wrap gap-2">
+                                ${patterns.common_starters.map(starter => 
+                                    `<span class="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded text-xs">${starter}</span>`
+                                ).join('')}
+                            </div>
+                        </div>
+                        <div class="text-left">
+                            <h4 class="font-medium text-gray-900 dark:text-white mb-2">Popular Hashtags</h4>
+                            <div class="flex flex-wrap gap-2">
+                                ${patterns.hashtag_patterns.popular_hashtags.map(tag => 
+                                    `<span class="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded text-xs">${tag}</span>`
+                                ).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Failed to load persona analysis:', error);
+            }
+        }
+
+        // Generate tweets
+        async function generateTweets(event) {
+            event.preventDefault();
+            
+            const context = document.getElementById('context').value;
+            const count = parseInt(document.getElementById('count').value);
+            const tone = document.getElementById('tone').value;
+            
+            try {
+                showLoading();
+                
+                const result = await apiCall('/generate-tweets', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        context,
+                        count,
+                        tone
+                    })
+                });
+                
+                displayGeneratedTweets(result.tweets);
+                showToast(`Generated ${result.tweets.length} tweets successfully!`, 'success');
+                
+                // Clear form
+                document.getElementById('context').value = '';
+                
+            } catch (error) {
+                showToast(`Generation failed: ${error.message}`, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Display generated tweets
+        function displayGeneratedTweets(tweets) {
+            const container = document.getElementById('generatedTweets');
+            
+            container.innerHTML = tweets.map((tweet, index) => `
+                <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Tweet ${index + 1}</span>
+                        <div class="flex space-x-2">
+                            <span class="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded">
+                                ${tweet.predicted_engagement}
+                            </span>
+                            <span class="px-2 py-1 text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded">
+                                ${tweet.style_similarity}/10
+                            </span>
+                        </div>
+                    </div>
+                    <p class="text-gray-900 dark:text-white mb-3 leading-relaxed">${tweet.content}</p>
+                    <div class="flex justify-between items-center">
+                        <p class="text-xs text-gray-500 dark:text-gray-400">${tweet.reasoning}</p>
+                        <button onclick="copyTweet('${tweet.content.replace(/'/g, "\\'")}', ${index})" 
+                            class="text-twitter hover:text-blue-600 transition-colors">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Copy tweet to clipboard
+        async function copyTweet(content, index) {
+            try {
+                await navigator.clipboard.writeText(content);
+                showToast('Tweet copied to clipboard!', 'success');
+            } catch (error) {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = content;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showToast('Tweet copied to clipboard!', 'success');
+            }
+        }
+
+        // Load tweets history
+        async function loadTweetsHistory() {
+            try {
+                const history = await apiCall('/generated-tweets/build_in_public?limit=12');
+                const container = document.getElementById('tweetsHistory');
+                
+                if (history.tweets && history.tweets.length > 0) {
+                    container.innerHTML = history.tweets.map(tweet => `
+                        <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                            <p class="text-gray-900 dark:text-white mb-2 text-sm leading-relaxed">${tweet.content}</p>
+                            <div class="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
+                                <span>${new Date(tweet.created_at).toLocaleDateString()}</span>
+                                <div class="flex space-x-2">
+                                    <span class="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">${tweet.predicted_engagement}</span>
+                                    <span class="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">${tweet.style_similarity}/10</span>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = `
+                        <div class="col-span-full text-center text-gray-500 dark:text-gray-400">
+                            <i class="fas fa-history text-4xl mb-4"></i>
+                            <p>No tweets history available</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Failed to load tweets history:', error);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            checkHealth();
+            loadStats();
+            loadTweetsHistory();
+            
+            // Try to load existing persona
+            loadPersonaAnalysis().then(() => {
+                personaAvailable = true;
+                document.getElementById('generateBtn').disabled = false;
+                document.getElementById('generateBtn').className = 'w-full bg-purple-500 text-white py-3 rounded-lg hover:bg-purple-600 transition-colors';
+            }).catch(() => {
+                // No persona available yet
+            });
+        });
+    </script>
+</body>
+</html> 
